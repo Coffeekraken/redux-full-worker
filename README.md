@@ -4,22 +4,22 @@
 
 <p>
 	<!-- <a href="https://travis-ci.org/coffeekraken/redux-full-worker">
-		<img src="https://img.shields.io/travis/coffeekraken/reduxfullb-worker.svg?style=flat-square" />
+		<img src="https://img.shields.io/travis/coffeekraken/redux-full-worker.svg?style=flat-square" />
 	</a> -->
-	<a href="https://www.npmjs.com/package/coffeekraken-reduxfullb-worker">
-		<img src="https://img.shields.io/npm/v/coffeekraken-reduxfullb-worker.svg?style=flat-square" />
+	<a href="https://www.npmjs.com/package/coffeekraken-redux-full-worker">
+		<img src="https://img.shields.io/npm/v/coffeekraken-redux-full-worker.svg?style=flat-square" />
 	</a>
 	<a href="https://github.com/coffeekraken/redux-full-worker/blob/master/LICENSE.txt">
-		<img src="https://img.shields.io/npm/l/coffeekraken-reduxfullb-worker.svg?style=flat-square" />
+		<img src="https://img.shields.io/npm/l/coffeekraken-redux-full-worker.svg?style=flat-square" />
 	</a>
 	<!-- <a href="https://github.com/coffeekraken/redux-full-worker">
-		<img src="https://img.shields.io/npm/dt/coffeekraken-reduxfullb-worker.svg?style=flat-square" />
+		<img src="https://img.shields.io/npm/dt/coffeekraken-redux-full-worker.svg?style=flat-square" />
 	</a>
 	<a href="https://github.com/coffeekraken/redux-full-worker">
-		<img src="https://img.shields.io/github/forks/coffeekraken/reduxfullb-worker.svg?style=social&label=Fork&style=flat-square" />
+		<img src="https://img.shields.io/github/forks/coffeekraken/redu-xfulb-worker.svg?style=social&label=Fork&style=flat-square" />
 	</a>
 	<a href="https://github.com/coffeekraken/redux-full-worker">
-		<img src="https://img.shields.io/github/stars/coffeekraken/reduxfullb-worker.svg?style=social&label=Star&style=flat-square" />
+		<img src="https://img.shields.io/github/stars/coffeekraken/redu-xfulb-worker.svg?style=social&label=Star&style=flat-square" />
 	</a> -->
 	<a href="https://twitter.com/coffeekrakenio">
 		<img src="https://img.shields.io/twitter/url/http/coffeekrakenio.svg?style=social&style=flat-square" />
