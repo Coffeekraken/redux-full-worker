@@ -60,17 +60,22 @@ import ReduxWorker from './redux.worker'
 import { applyMiddleware } from 'redux'
 import { createStore } from 'coffeekraken-redux-full-worker'
 
-// instanciate our worker
-const worker = new ReduxWorker()
-
 // some reducers if needed in the main thread
+// but all the main reducers will live in the worker.
+// !! don't combine the reducers here cause it will be done
+// by the createStore function
 const reducers = {
-  // key:reducerFn
+  // key: reducerFn
 }
 
 // create our store
-const store = createStore(worker, reducers, {}, applyMiddleware(...))
+const store = createStore(ReduxWorker, reducers, {
+	// initial state. Important cause we don't have all the reducers
+	// to initialise our state
+	// key: stateObj
+}, applyMiddleware(...))
 
+// render our app with our store
 ReactDOM.render(
   <Provider store={store}>
     // etc...
@@ -82,12 +87,16 @@ ReactDOM.render(
 Next we have our `redux.worker.js` file that is the main of all our workerized code. Here's how it looks:
 
 ```js
-import { createStore, applyMiddleware } from 'redux'
+import { createStore, applyMiddleware, combineReducers } from 'redux'
 import { expose } from 'coffeekraken-redux-full-worker'
 import reducers from '...' // your application reducers
 
 // create the actual store of our app with middlewares, etc...
-const store = createStore(reducers)
+const store = createStore(
+	combineReducers(reducers),
+	{},
+	applyMiddleware(...)
+)
 
 // expose your store to the main app
 expose(store, self)

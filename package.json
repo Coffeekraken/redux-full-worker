@@ -1,14 +1,14 @@
 {
-  "name": "coffeekraken-redux-web-worker",
+  "name": "coffeekraken-redux-full-worker",
   "version": "1.0.0",
-  "description": "Redux middleware that let you use web worker with ease to handle your expensive (or not) actions",
+  "description": "Redux \"container\" that let you run all your redux code (reducers, thunk, sagas, actions, etc...) inside a web worker that communicate with the main app thread and update the main store accordingly.",
   "main": "dist/index.js",
   "scripts": {
     "dist": "babel src --out-dir dist",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "web",
+    "full",
     "worker",
     "redux",
     "react",

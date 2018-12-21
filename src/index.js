@@ -1,4 +1,8 @@
 import { createStore as createReduxStore, combineReducers } from 'redux'
+import { detect } from 'detect-browser'
+
+// browser detection
+const browser = detect()
 
 // setting up some variables
 let _store
@@ -6,52 +10,7 @@ let _reducers
 let _worker
 
 // export some constants
-export const HYDRATE = 'redux_full_worker/hydrate'
-export const SET_INITIAL_STATE = 'redux_full_worker/set_initial_state'
-
-/**
- * Set an initial state for a particular "reducer".
- * This need to be the same shape of the `combineReducers` parameter:
- * ```js
- * {
- *   key: {
- *     // state...
- *   }
- * }
- * ```
- *
- * @param    {Object}    state    The initial state to set in the global state
- *
- * @example    js
- * import { setInitialState } from 'coffeekraken-redux-full-worker'
- * setInitialState({
- *   todos: [{
- *     id: 1, text: 'Do something', done: false
- *   }]
- * })
- *
- * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
- */
-export const setInitialState = state => {
-
-  // add a dumb reducer for this specific
-  // key to avoid warnings from react
-  Object.keys(state).forEach((key) => {
-    _reducers[key] = (state = {}, action) => state
-  })
-
-  // get the main reducer with the newly added one
-  const reducers = _mainReducer(combineReducers(_reducers), _worker)
-
-  // replace the main reducer by the newly created one
-  _store.replaceReducer(reducers)
-
-  // dispatch an initial state action
-  _store.dispatch({
-    type: SET_INITIAL_STATE,
-    state
-  })
-}
+export const HYDRATE = 'redux_full_worker/HYDRATE'
 
 /**
  * Expose the store from the worker to the main app.
@@ -60,6 +19,7 @@ export const setInitialState = state => {
  *
  * @param    {Object}    store    The store to expose
  * @param    {DedicatedWorkerGlobalScope}    self    The worker global variable
+ * @return    {Object}    Return the store for NodeJS implementation
  *
  * @example    js
  * import { expose } from 'coffeekraken-redux-full-worker'
@@ -70,18 +30,22 @@ export const setInitialState = state => {
  */
 export const expose = (store, self) => {
   let timeout
-  store.subscribe(() => {
-    clearTimeout(timeout)
-    timeout = setTimeout(() => {
-      self.postMessage({
-        type: HYDRATE,
-        state: store.getState()
+  if (browser) {
+    store.subscribe(() => {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        self.postMessage({
+          type: HYDRATE,
+          state: store.getState()
+        })
       })
     })
-  })
-  self.addEventListener('message', e => {
-    store.dispatch(e.data)
-  })
+    self.addEventListener('message', e => {
+      store.dispatch(e.data)
+    })
+  }
+  // return the store for NodeJS implementation
+  return store
 }
 
 /**
@@ -94,28 +58,48 @@ export const expose = (store, self) => {
  * @private
  * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
  */
-const _mainReducer = (reducers, worker) =>
-  (state = {}, action) => {
-    if (action.type === HYDRATE) {
-      return {
-        ...state,
-        ...action.state
-      }
-    }
-    if (action.type === SET_INITIAL_STATE) {
-      return {
-        ...state,
-        ...action.state
-      }
-    }
-    if (!action.type.match(/@@redux/)) {
-      worker.postMessage(action)
-    }
+const _mainReducer = (reducers, worker) => (state = {}, action) => {
+  if (action.type === HYDRATE) {
     return {
       ...state,
-      ...reducers(state, action)
+      ...action.state
     }
   }
+  if (!action.type.match(/@@redux/)) {
+    if (browser) {
+      worker.postMessage(action)
+    } else {
+      worker.dispatch(action)
+    }
+  }
+  return {
+    ...state,
+    ...reducers(state, action)
+  }
+}
+
+/**
+ * Register a reducer in the store
+ * @param    {String}    namespace    The reducer namespace
+ * @param    {Function}    reducer    The actual reducer function
+ *
+ * @example    js
+ * import { registerReducer } from 'coffeekraken-redux-full-worker'
+ * const reducer = (state = {}, action) => state // simpliest reducer
+ * registerReducer('todos', reducer)
+ *
+ * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
+ */
+export const registerReducer = (namespace, reducer) => {
+  // save new reducer in the stack
+  _reducers[namespace] = reducer
+
+  // get the main reducer with the newly added one
+  const reducers = _mainReducer(combineReducers(_reducers), _worker)
+
+  // replace the main reducer by the newly created one
+  _store.replaceReducer(reducers)
+}
 
 /**
  * Create the redux store and listen for messages coming from the worker
@@ -135,26 +119,67 @@ const _mainReducer = (reducers, worker) =>
  *   todos: todosReducer,
  *   // etc...
  * }
- * const worker = new ReduxWorker()
- * const store = createStore(worker, reducers, {}, compose(...))
+ * const store = createStore(ReduxWorker, reducers, {}, compose(...))
  *
  * @author    Olivier Bossel <olivier.bossel@gmail.com> (https://olivierbossel.com)
  */
-const createStore = (worker, reducers, initialState = {}, storeEnhancers) => {
+export const createStore = (
+  ReduxWorker,
+  reducers,
+  initialState,
+  storeEnhancers
+) => {
+  // instanciate worker if is a web worker instance
+  let worker = ReduxWorker
+  if (browser) {
+    worker = new ReduxWorker()
+  }
+
+  // register simple reducer for the one that does not exist already
+  Object.keys(initialState).forEach((key) => {
+    if (!reducers[key]) {
+      reducers[key] = (state = {}, action) => state
+    }
+  })
+
   // create the main reducer
   const mainReducer = _mainReducer(combineReducers(reducers), worker)
 
   // create the redux store
   const store = createReduxStore(mainReducer, initialState, storeEnhancers)
 
-  // listen for messages coming from the worker
-  // and translate them to an HYDRATE one
-  worker.addEventListener('message', e => {
-    store.dispatch({
-      type: HYDRATE,
-      state: e.data.state
+  // allow to register some reducers asyncronously
+  store.asyncReducers = reducers
+
+  // make distinction between a browser implementation
+  // and a NodeJS one
+  if (browser) {
+    // listen for messages coming from the worker
+    // and translate them to an HYDRATE one
+    worker.addEventListener('message', e => {
+      // register simple reducer for the one that does not exist already
+      Object.keys(e.data.state).forEach((key) => {
+        if (!_reducers[key]) {
+          registerReducer(key, (state = {}, action) => state)
+        }
+      })
+      // dispatch the hydrate action
+      // along with the new state to set
+      store.dispatch({
+        type: HYDRATE,
+        state: e.data.state
+      })
     })
-  })
+  } else {
+    worker.subscribe(() => {
+      setTimeout(() => {
+        store.dispatch({
+          type: HYDRATE,
+          state: worker.getState()
+        })
+      })
+    })
+  }
 
   // save variables for later use
   _worker = worker
@@ -164,4 +189,3 @@ const createStore = (worker, reducers, initialState = {}, storeEnhancers) => {
   // return the created store
   return store
 }
-export default createStore
