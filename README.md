@@ -29,7 +29,7 @@
 	</a>
 </p>
 
-Redux "container" that let you run all your redux code (reducers, thunk, sagas, actions, etc...) inside a web worker that communicate with the main app thread and update the main store accordingly.
+<p class="lead">Redux "container" that let you run all your redux code (reducers, thunk, sagas, actions, etc...) inside a web worker that communicate with the main app thread and update the main store accordingly.</p>
 
 ## Table of content
 
